@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donor QR Generator 2026</title>
+    <script src="cdnjs.cloudflare.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #eef2f3; color: #333; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: #555; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; }
+        .date-row { display: flex; gap: 10px; }
+        .date-row select { flex: 1; }
+        button { width: 100%; margin-top: 20px; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #1e8449; }
+        #qrcode-container { margin-top: 30px; text-align: center; }
+        #qrcode { display: inline-block; padding: 15px; background: white; border: 1px solid #eee; }
+        .download-btn { background: #2980b9; margin-top: 15px; display: none; text-align: center; text-decoration: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Donor Data QR Generator</h2>
+
+    <!-- Book & Donor Info -->
+    <div class="form-group">
+        <label>Book Title / Item Details</label>
+        <input type="text" id="book" placeholder="e.g. History Textbook Vol 1">
+    </div>
+
+    <!-- Dropdown Date Selection -->
+    <div class="form-group">
+        <label>Date Selection (Year / Month / Day)</label>
+        <div class="date-row">
+            <select id="year"></select>
+            <select id="month">
+                <option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option>
+                <option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option>
+                <option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option>
+                <option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option>
+            </select>
+            <select id="day"></select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Quantity (Number of Items)</label>
+        <input type="number" id="qty" value="1" min="1">
+    </div>
+
+    <div class="form-group">
+        <label>Donor Name</label>
+        <input type="text" id="donor" placeholder="e.g. Global Education Fund">
+    </div>
+
+    <div class="form-group">
+        <label>Program & Region</label>
+        <input type="text" id="location" placeholder="e.g. West Region - District 4">
+    </div>
+
+    <div class="form-group">
+        <label>Custom Notes / Additional Text</label>
+        <textarea id="custom" rows="3" placeholder="Enter any extra details here..."></textarea>
+    </div>
+
+    <button onclick="generateQR()">Generate QR Code</button>
+
+    <div id="qrcode-container">
+        <div id="qrcode"></div>
+        <a id="downloadLink" class="download-btn">Download QR Image</a>
+    </div>
+</div>
+
+<script>
+    // Populate Date Dropdowns for 2026
+    const yearSelect = document.getElementById('year');
+    const currentYear = 2026;
+    for(let i = currentYear; i <= currentYear + 5; i++) {
+        let opt = document.createElement('option');
+        opt.value = i; opt.innerHTML = i;
+        yearSelect.appendChild(opt);
+    }
+
+    const daySelect = document.getElementById('day');
+    for(let i = 1; i <= 31; i++) {
+        let opt = document.createElement('option');
+        opt.value = i; opt.innerHTML = i;
+        daySelect.appendChild(opt);
+    }
+
+    function generateQR() {
+        // Clear previous
+        document.getElementById("qrcode").innerHTML = "";
+        
+        // Data Extraction
+        const book = document.getElementById("book").value;
+        const fullDate = `${document.getElementById("day").value} ${document.getElementById("month").value} ${document.getElementById("year").value}`;
+        const qty = document.getElementById("qty").value;
+        const donor = document.getElementById("donor").value;
+        const loc = document.getElementById("location").value;
+        const custom = document.getElementById("custom").value;
+
+        // Structured Data String
+        const finalData = `ITEM: ${book}\nDATE: ${fullDate}\nQTY: ${qty}\nDONOR: ${donor}\nLOC: ${loc}\nNOTES: ${custom}`;
+
+        if(!book || !donor) {
+            alert("Please provide at least the Book Title and Donor.");
+            return;
+        }
+
+        const qrcode = new QRCode(document.getElementById("qrcode"), {
+            text: finalData,
+            width: 250,
+            height: 250,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.M
+        });
+
+        // Set up Download
+        setTimeout(() => {
+            const img = document.querySelector("#qrcode img");
+            if (img) {
+                const dl = document.getElementById("downloadLink");
+                dl.href = img.src;
+                dl.download = `QR_${book.replace(/\s+/g, '_')}.png`;
+                dl.style.display = "block";
+            }
+        }, 400);
+    }
+</script>
+</body>
+</html>
