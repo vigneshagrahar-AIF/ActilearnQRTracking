@@ -1,137 +1,271 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donor QR Generator 2026</title>
-    <script src="cdnjs.cloudflare.com"></script>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #eef2f3; color: #333; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: #555; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; }
-        .date-row { display: flex; gap: 10px; }
-        .date-row select { flex: 1; }
-        button { width: 100%; margin-top: 20px; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #1e8449; }
-        #qrcode-container { margin-top: 30px; text-align: center; }
-        #qrcode { display: inline-block; padding: 15px; background: white; border: 1px solid #eee; }
-        .download-btn { background: #2980b9; margin-top: 15px; display: none; text-align: center; text-decoration: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; }
-    </style>
-</head>
-<body>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Donor QR Generator 2026</title>
 
-<div class="container">
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #eef2f3; color: #333; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.85em; color: #555; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1em; }
+    .date-row { display: flex; gap: 10px; }
+    .date-row select { flex: 1; }
+    button { width: 100%; margin-top: 20px; padding: 15px; background: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1em; font-weight: bold; transition: 0.3s; }
+    button:hover { background: #1e8449; }
+    #qrcode-container { margin-top: 30px; text-align: center; }
+    #qrcode { display: inline-block; padding: 15px; background: white; border: 1px solid #eee; }
+    .download-btn { background: #2980b9; margin-top: 15px; display: none; text-align: center; text-decoration: none; color: white; padding: 12px; border-radius: 8px; font-weight: bold; display:inline-block; }
+    .status { margin-top: 12px; font-size: 0.95em; color: #444; }
+    .status.error { color: #b00020; font-weight: 600; }
+    .status.ok { color: #1b5e20; font-weight: 600; }
+  </style>
+
+  <!-- Robust loader: try multiple CDNs, ensure QRCode exists -->
+  <script>
+    (function loadQRCodeLib() {
+      const sources = [
+        "https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js",
+        "https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"
+      ];
+
+      function inject(src) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.async = true;
+          s.onload = () => resolve(src);
+          s.onerror = () => reject(new Error("Failed to load: " + src));
+          document.head.appendChild(s);
+        });
+      }
+
+      async function tryLoad() {
+        for (const src of sources) {
+          try {
+            await inject(src);
+            if (window.QRCode) return; // success
+          } catch (e) {
+            // continue
+          }
+        }
+      }
+
+      window.__qrLibReady = tryLoad();
+    })();
+  </script>
+</head>
+
+<body>
+  <div class="container">
     <h2>Donor Data QR Generator</h2>
 
-    <!-- Book & Donor Info -->
     <div class="form-group">
-        <label>Book Title / Item Details</label>
-        <input type="text" id="book" placeholder="e.g. History Textbook Vol 1">
-    </div>
-
-    <!-- Dropdown Date Selection -->
-    <div class="form-group">
-        <label>Date Selection (Year / Month / Day)</label>
-        <div class="date-row">
-            <select id="year"></select>
-            <select id="month">
-                <option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option>
-                <option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option>
-                <option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option>
-                <option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option>
-            </select>
-            <select id="day"></select>
-        </div>
+      <label>Book Title / Item Details</label>
+      <input type="text" id="book" placeholder="e.g. History Textbook Vol 1" />
     </div>
 
     <div class="form-group">
-        <label>Quantity (Number of Items)</label>
-        <input type="number" id="qty" value="1" min="1">
+      <label>Date Selection (Year / Month / Day)</label>
+      <div class="date-row">
+        <select id="year"></select>
+        <select id="month">
+          <option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option>
+          <option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option>
+          <option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option>
+          <option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option>
+        </select>
+        <select id="day"></select>
+      </div>
     </div>
 
     <div class="form-group">
-        <label>Donor Name</label>
-        <input type="text" id="donor" placeholder="e.g. Global Education Fund">
+      <label>Quantity (Number of Items)</label>
+      <input type="number" id="qty" value="1" min="1" />
     </div>
 
     <div class="form-group">
-        <label>Program & Region</label>
-        <input type="text" id="location" placeholder="e.g. West Region - District 4">
+      <label>Donor Name</label>
+      <input type="text" id="donor" placeholder="e.g. Global Education Fund" />
     </div>
 
     <div class="form-group">
-        <label>Custom Notes / Additional Text</label>
-        <textarea id="custom" rows="3" placeholder="Enter any extra details here..."></textarea>
+      <label>Program & Region</label>
+      <input type="text" id="location" placeholder="e.g. West Region - District 4" />
     </div>
 
-    <button onclick="generateQR()">Generate QR Code</button>
+    <div class="form-group">
+      <label>Custom Notes / Additional Text</label>
+      <textarea id="custom" rows="3" placeholder="Enter any extra details here..."></textarea>
+    </div>
+
+    <button id="generateBtn" type="button">Generate QR Code</button>
 
     <div id="qrcode-container">
-        <div id="qrcode"></div>
-        <a id="downloadLink" class="download-btn">Download QR Image</a>
+      <div id="qrcode"></div><br/>
+      <a id="downloadLink" class="download-btn" href="#" role="button" aria-disabled="true">Download QR Image</a>
+      <div id="status" class="status"></div>
     </div>
-</div>
+  </div>
 
-<script>
-    // Populate Date Dropdowns for 2026
-    const yearSelect = document.getElementById('year');
+  <script>
+    // Populate date dropdowns
+    const yearSelect = document.getElementById("year");
     const currentYear = 2026;
-    for(let i = currentYear; i <= currentYear + 5; i++) {
-        let opt = document.createElement('option');
-        opt.value = i; opt.innerHTML = i;
-        yearSelect.appendChild(opt);
+    for (let i = currentYear; i <= currentYear + 5; i++) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = String(i);
+      yearSelect.appendChild(opt);
     }
 
-    const daySelect = document.getElementById('day');
-    for(let i = 1; i <= 31; i++) {
-        let opt = document.createElement('option');
-        opt.value = i; opt.innerHTML = i;
-        daySelect.appendChild(opt);
+    const daySelect = document.getElementById("day");
+    for (let i = 1; i <= 31; i++) {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = String(i);
+      daySelect.appendChild(opt);
     }
 
-    function generateQR() {
-        // Clear previous
-        document.getElementById("qrcode").innerHTML = "";
-        
-        // Data Extraction
-        const book = document.getElementById("book").value;
-        const fullDate = `${document.getElementById("day").value} ${document.getElementById("month").value} ${document.getElementById("year").value}`;
-        const qty = document.getElementById("qty").value;
-        const donor = document.getElementById("donor").value;
-        const loc = document.getElementById("location").value;
-        const custom = document.getElementById("custom").value;
+    const qrcodeEl = document.getElementById("qrcode");
+    const dl = document.getElementById("downloadLink");
+    const statusEl = document.getElementById("status");
 
-        // Structured Data String
-        const finalData = `ITEM: ${book}\nDATE: ${fullDate}\nQTY: ${qty}\nDONOR: ${donor}\nLOC: ${loc}\nNOTES: ${custom}`;
+    function setStatus(msg, kind) {
+      statusEl.textContent = msg || "";
+      statusEl.className = "status" + (kind ? " " + kind : "");
+    }
 
-        if(!book || !donor) {
-            alert("Please provide at least the Book Title and Donor.");
-            return;
+    function safeTrim(v) {
+      return (v ?? "").toString().trim();
+    }
+
+    function makeSafeFilename(name) {
+      const base = safeTrim(name) || "QR";
+      return base
+        .replace(/[\s]+/g, "_")
+        .replace(/[^\w\-]+/g, "")  // remove unsafe chars
+        .slice(0, 60) || "QR";
+    }
+
+    function clearQR() {
+      qrcodeEl.innerHTML = "";
+      dl.style.display = "none";
+      dl.setAttribute("aria-disabled", "true");
+      dl.removeAttribute("download");
+      dl.href = "#";
+    }
+
+    function getQRData() {
+      const book = safeTrim(document.getElementById("book").value);
+      const day = safeTrim(document.getElementById("day").value);
+      const month = safeTrim(document.getElementById("month").value);
+      const year = safeTrim(document.getElementById("year").value);
+
+      const qtyRaw = safeTrim(document.getElementById("qty").value);
+      const qty = Math.max(1, parseInt(qtyRaw || "1", 10) || 1);
+
+      const donor = safeTrim(document.getElementById("donor").value);
+      const loc = safeTrim(document.getElementById("location").value);
+      const custom = safeTrim(document.getElementById("custom").value);
+
+      const fullDate = `${day} ${month} ${year}`;
+
+      // Newlines are fine; scanners handle it.
+      const finalData =
+`ITEM: ${book}
+DATE: ${fullDate}
+QTY: ${qty}
+DONOR: ${donor}
+LOC: ${loc}
+NOTES: ${custom}`;
+
+      return { book, donor, finalData };
+    }
+
+    function getRenderedDataURL() {
+      // qrcodejs may render canvas or img; support both
+      const canvas = qrcodeEl.querySelector("canvas");
+      if (canvas && canvas.toDataURL) return canvas.toDataURL("image/png");
+
+      const img = qrcodeEl.querySelector("img");
+      if (img && img.src) return img.src;
+
+      return null;
+    }
+
+    async function generateQR() {
+      clearQR();
+      setStatus("Preparing QR library…", "");
+
+      // Wait for loader to finish
+      try {
+        await (window.__qrLibReady || Promise.resolve());
+      } catch (e) {
+        // ignored - we handle via window.QRCode check below
+      }
+
+      if (!window.QRCode) {
+        setStatus("QR library failed to load. Check your internet, or allow CDN access.", "error");
+        return;
+      }
+
+      const { book, donor, finalData } = getQRData();
+
+      if (!book || !donor) {
+        setStatus("Please provide at least the Book Title and Donor Name.", "error");
+        return;
+      }
+
+      // If data is huge, QR may become dense. Use higher correction level; also increase size a bit.
+      setStatus("Generating QR…", "");
+
+      try {
+        // eslint-disable-next-line no-new
+        new QRCode(qrcodeEl, {
+          text: finalData,
+          width: 300,
+          height: 300,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H // more robust scanning
+        });
+      } catch (err) {
+        setStatus("Failed to generate QR. Try shortening NOTES or other fields.", "error");
+        return;
+      }
+
+      // Give DOM a tick, then set up download
+      requestAnimationFrame(() => {
+        const dataUrl = getRenderedDataURL();
+        if (!dataUrl) {
+          setStatus("QR generated, but could not prepare download. (Renderer not found)", "error");
+          return;
         }
 
-        const qrcode = new QRCode(document.getElementById("qrcode"), {
-            text: finalData,
-            width: 250,
-            height: 250,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.M
-        });
+        const safeName = makeSafeFilename(book);
+        dl.href = dataUrl;
+        dl.download = `QR_${safeName}.png`;
+        dl.style.display = "inline-block";
+        dl.setAttribute("aria-disabled", "false");
 
-        // Set up Download
-        setTimeout(() => {
-            const img = document.querySelector("#qrcode img");
-            if (img) {
-                const dl = document.getElementById("downloadLink");
-                dl.href = img.src;
-                dl.download = `QR_${book.replace(/\s+/g, '_')}.png`;
-                dl.style.display = "block";
-            }
-        }, 400);
+        setStatus("QR generated successfully.", "ok");
+      });
     }
-</script>
+
+    document.getElementById("generateBtn").addEventListener("click", generateQR);
+
+    // Optional: press Enter to generate when focused in inputs (not textarea)
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && e.target && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        generateQR();
+      }
+    });
+  </script>
 </body>
 </html>
